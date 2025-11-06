@@ -197,12 +197,13 @@ class EntryUi:
         self.ruleId = ruleId
         self.positionCategory = posCat
         self.positionResult = posRes
-        self.result = "0";
+        self.result = "0"
         self.clickRect = ()
         self.hasValue = False
+        self.playerId = 0 # need to extend the UI
     
     def update(self, gameLogic):
-        self.result = str(gameLogic.getResultOfRule(self.ruleId))
+        self.result = str(gameLogic.getResultOfRule(self.ruleId, self.playerId))
         self.hasValue = not gameLogic.canScore(self.ruleId)
         
     def showCategory(self, helper:UIHelper):
