@@ -6,7 +6,7 @@
 # Letzte Änderung: 10.09.2025
 #---------------------------------------------
 import pygame
-from KniffelGameLogic import Kniffel
+from KniffelGameLogic import KniffelGameLogic
 from KniffelGUI import KniffelGUI
 
 class KniffelPygame:
@@ -18,7 +18,7 @@ class KniffelPygame:
         self.gui = KniffelGUI(screenSize)
         
         self.clock = pygame.time.Clock()
-        self.kniffel = Kniffel()
+        self.kniffel = KniffelGameLogic(1)
         self.isRunning = True
         self.isShaking = False
 

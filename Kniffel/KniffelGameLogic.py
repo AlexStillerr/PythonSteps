@@ -36,8 +36,9 @@ class Dice:
         return self.value < other.value
 
 class PlayerState:
-    def __init__(self):
+    def __init__(self, playerId):
         self.score = []
+        self.playerId = playerId
     
     def addScore(self, ruleId, score):
         dic = {"id":ruleId,"score":score}
@@ -74,6 +75,8 @@ class PlayerState:
     
     def reset(self):
         self.score.clear()
+
+    def scoreCount(self): return len(self.score)
     
 MAX_DiceRolls = 3
 Bonus_Border = 63
@@ -84,9 +87,8 @@ class GameState(IntEnum):
     ShuffleDice = 1
     SelectResult = 2
 
-class Kniffel:
-    #def __getitem__(self): überladen des [] operators
-    def __init__(self):
+class KniffelGameLogic:
+    def __init__(self, playerCount):
         self.dices = [Dice(),Dice(),Dice(),Dice(),Dice()]
         
         self.rules = [Rule(RE_Number.format("1"), 1),
@@ -107,9 +109,9 @@ class Kniffel:
         self.isActiveRound = False
         
         self.currentPlayer = 0
-        self.playerCount = 1
-        dd = PlayerState()
-        self.player = [PlayerState()]
+        self.playerCount = playerCount
+        self.players = [PlayerState(id) for id in range(playerCount)]
+        self.diceString = ""
     
     def _convertToString(self):
         self.dices.sort()
@@ -124,26 +126,26 @@ class Kniffel:
                       
     def roll(self):
         if self.isActiveRound:
-            self.rollDices()
+            self._rollDices()
         else:
-            self.newRound()
-            self.rollDices()
+            self._newRound()
+            self._rollDices()
             
-    def newRound(self):
+    def _newRound(self):
         for d in self.dices:
             d.setToShaker()
         self.rollsLeft = MAX_DiceRolls
         self.isActiveRound = True
             
-    def rollDices(self):
-        if self.rollsLeft > 0:
+    def _rollDices(self):
+        if self.canRollDice():
             self.rollsLeft -= 1
             activeDices = list(filter(lambda d : d.diceState == DiceState.Unselected, self.dices))
             for d in activeDices:
                 d.roll()
-        self.updateDiceState()
+        self._updateDiceState()
     
-    def updateDiceState(self):
+    def _updateDiceState(self):
         if self.rollsLeft <= 0:
             [d.setInactive() for d in self.dices]
             
@@ -152,12 +154,13 @@ class Kniffel:
         for r in self.rules:
             r.isMatching(self.diceString)
     
+    '''
     def selectDice(self, diceValue):
         for d in self.dices:
             if d.diceState == DiceState.Unselected and d.value == diceValue:
                 d.setBySide()
                 return True
-        return False
+        return False'''
     
     def getDiceValueAtPosition(self, pos):
         if self.dices[pos].value == -1:
@@ -167,8 +170,8 @@ class Kniffel:
     def getDiceStateAtPosition(self, pos):
         return self.dices[pos].diceState
     
-    def getResultOfRule(self, ruleId):
-        entry = self._getPlayer(self.currentPlayer).getScore(ruleId)
+    def getResultOfRule(self, ruleId, playerId):
+        entry = self._getPlayer(playerId).getScore(ruleId)
         if entry :
             return entry
         if self.isActiveRound:
@@ -185,17 +188,23 @@ class Kniffel:
         if self.isActiveRound:
             return self._getPlayer(playerId).canScore(ruleId)
         return False
-        
+    
+    def canRollDice(self):
+        return self.rollsLeft > 0
+
     def addToScore(self, ruleId):
-        self._getPlayer(self.currentPlayer).addScore(ruleId, self.getResultOfRule(ruleId))
+        self._getPlayer(self.currentPlayer).addScore(ruleId, self.getResultOfRule(ruleId, self.currentPlayer))
         self.rollsLeft = 0
         self.isActiveRound = False
-        # next player
+        self._nextPlayer()
+        
+    def _nextPlayer(self):
+        self.currentPlayer = (self.currentPlayer +1) % self.playerCount
     
     def _getPlayer(self, playerId):
         if playerId == -1:
             playerId = self.currentPlayer
-        return self.player[playerId]
+        return self.players[playerId]
     
     def getTopScore(self, playerId = -1):
         return self._getPlayer(playerId).getTopScore()
@@ -205,7 +214,10 @@ class Kniffel:
     
     def getBonusScore(self, playerId = -1):
         return self._getPlayer(playerId).getBonusScore()
-        
+    
+    def getTotal(self, playerId = -1):
+        return self._getPlayer(playerId).getTotal()
+
     def debugPrintDice(self):
         for d in self.dices:
             print(d.value, end=" ")
@@ -218,7 +230,13 @@ class Kniffel:
         pass
     
     def newGame(self):
-        pass
-    
+        for p in self.players:
+            p.reset()
+        self.rollsLeft = 0
+        self.isActiveRound = False
+           
     def isGameOver(self):
-        pass
+        for p in self.players:
+            if self._getPlayer(p.playerId).scoreCount() < len(self.rules):
+                return False
+        return True
