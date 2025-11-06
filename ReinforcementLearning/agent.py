@@ -12,14 +12,17 @@ class Agent:
             json.dump(self.brain, file, indent=3)
 
     def loadLearned(self, path):
-        with open(path) as file:
-            self.brain = json.load(file)
+        try:
+            with open(path) as file:
+                self.brain = json.load(file)
+        except Exception as e:
+            print(e)
 
 class AgentMonteCarlo(Agent):
     def __init__(self, alpha = 0.15, randomFactor = 0.2):
         Agent.__init__(self, alpha, randomFactor)
         self.stateHistory = [((0,0), 0)]
-        self.G = {} # reward table
+        #self.G = {} # reward table
     
     def updateStateHistory(self, state, reward):
         self.stateHistory.append((state, reward))
@@ -30,12 +33,12 @@ class AgentMonteCarlo(Agent):
         gamma = 0.9  # discount factor (wie wichtig zukünftige Belohnungen sind)
         for state, reward in reversed(self.stateHistory):
             G = reward + gamma * G
-            self.G[state] = self.getValue(state) + a * (G - self.getValue(state))
+            self.brain[state] = self.getValue(state) + a * (G - self.getValue(state))
         self.stateHistory = []
         self.randomFactor = max(0.01, self.randomFactor * 0.995)
 
     def getValue(self, state):
-        return self.G.get(state, 0.0)
+        return self.brain.get(state, 0.0)
     
     def getNextState(self, state, action):
         return None
@@ -57,15 +60,15 @@ class AgentMonteCarlo(Agent):
         return nextMove
 
 
-class AgentQLearning: # work in progress
+class AgentQLearning(Agent): # work in progress
     def __init__(self, playerId, alpha = 0.15, randomFactor = 0.2):
         self.playerId = playerId
         self.alpha = alpha # learning rate
         self.randomFactor = randomFactor
-        self.Q = {} 
+        #self.Q = {} 
         
     def getValue(self, state, action):
-        return self.Q.get((state, action), 0.0)
+        return self.brain.get((state, action), 0.0)
 
     def getNextState(self, state, action):
         newState = [s for s in state]
