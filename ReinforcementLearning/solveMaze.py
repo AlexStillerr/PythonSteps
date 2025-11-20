@@ -13,9 +13,9 @@ class AgentMaze(AgentMonteCarlo):
         for x, row in enumerate(states):
             for y, col in enumerate(row):
                 if col == 1:
-                    self.G[(x,y)] = 0.0
+                    self.brain[(x,y)] = 0.0
                 else:
-                    self.G[(x,y)] = np.random.uniform(high=1.0, low=0.1)
+                    self.brain[(x,y)] = np.random.uniform(high=1.0, low=0.1)
 
     def learn(self):
         AgentMonteCarlo.learn(self)
@@ -61,7 +61,7 @@ def solveAMaze():
             state, _ = maze.getStateAndReward()
             # select action
             moves = maze.allowedStates[state]
-            action = agent.chooseAction(state, moves)
+            action = agent.chooseLearnAction(state, moves)
             
             # Update environment
             maze.updateMaze(action)
@@ -83,7 +83,7 @@ def solveAMaze():
         state, _ = maze.getStateAndReward()
         # select action
         moves = maze.allowedStates[state]
-        action = agent.chooseAction(state, moves)
+        action = agent.chooseRealAction(state, moves)
         
         maze.updateMaze(action)
         print(f"{action}: {maze.robotPosition}")

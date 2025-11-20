@@ -21,7 +21,7 @@ class Agent:
 class AgentMonteCarlo(Agent):
     def __init__(self, alpha = 0.15, randomFactor = 0.2):
         Agent.__init__(self, alpha, randomFactor)
-        self.stateHistory = [((0,0), 0)]
+        self.stateHistory = [] # ((0,0), 0)
         #self.G = {} # reward table
     
     def updateStateHistory(self, state, reward):
@@ -42,21 +42,28 @@ class AgentMonteCarlo(Agent):
     
     def getNextState(self, state, action):
         return None
+    
+    def getRandomAction(self, moves):
+        return np.random.choice(moves)
 
-    def chooseAction(self, state, allowedMoves):
+    def chooseLearnAction(self, state, allowedMoves):
         nextMove = None
-
         n = np.random.random()
         if n < self.randomFactor:
-            nextMove = np.random.choice(allowedMoves)
+            nextMove = self.getRandomAction(allowedMoves) 
         else:
-            maxG = -10e15 # a really small random number
-            for action in allowedMoves:
-                newState = self.getNextState(state, action)
-                if self.getValue(newState) >= maxG:
-                    nextMove = action
-                    maxG = self.getValue(newState)
+            nextMove = self.chooseRealAction(state, allowedMoves)    
 
+        return nextMove
+    
+    def chooseRealAction(self, state, allowedMoves):
+        nextMove = None
+        maxG = -10e15 # a really small random number
+        for action in allowedMoves:
+            newState = self.getNextState(state, action)
+            if self.getValue(newState) > maxG:
+                nextMove = action
+                maxG = self.getValue(newState)
         return nextMove
 
 

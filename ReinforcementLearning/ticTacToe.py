@@ -45,7 +45,7 @@ def learnTicTacToe():
             actions = field.getActionsOfState(state)
             #print(f"{state} -> {actions} -> {currentPlayer}")
 
-            action = currentAgent.chooseAction(state, actions)
+            action = currentAgent.chooseLearnAction(state, actions)
 
             field.takeAction(action, currentPlayer+1)
             
@@ -95,7 +95,7 @@ def playTicTacToe(agents):
             actions = field.getActionsOfState(state)
 
             if currentPlayer == 1:
-                action = currentAgent.chooseAction(state, actions)
+                action = currentAgent.chooseRealAction(state, actions)
             else:
                 action = int(input())
 

@@ -1,5 +1,5 @@
 from agent import AgentMonteCarlo
-
+import numpy as np
 
 class MatchFourAgent(AgentMonteCarlo):
     def __init__(self, playerId, alpha=0.15, randomFactor=0.2):
@@ -11,10 +11,9 @@ class MatchFourAgent(AgentMonteCarlo):
         newState[int(action)] = str(self.playerId)
         return "".join(newState)
     
-
-class MachtFourState:
-    field: list
-
+    def getRandomAction(self, moves):
+        return int(np.random.choice(moves))
+    
 class MatchFourGame:
     def __init__(self):
         self.field = []
@@ -35,6 +34,17 @@ class MatchFourGame:
                 self.field[self.index(col,row)] = 0
             self.colHeight[col] = 0
         self.winningPlayer = 0
+
+    def printField(self):
+        for row in range (6):
+            for col in range(7):
+                print(f"{self.index(col, 5-row):2}",end=" ")
+            print()
+        print("-------")
+        for row in range (6):
+            for col in range(7):
+                print(f"{self.field[self.index(col, 5-row)]:2}",end=" ")
+            print()
 
     def index(self, col, row): return col + row*7
     
@@ -57,18 +67,21 @@ class MatchFourGame:
             return returnValue
         return (-1, -1)
     
-    def getReward(self):
-        r = []
-        if self.winningPlayer == 1:
-            r.append(10)
-        else:
-            r.append(0)
+    def getReward(self, player):
+        if self.winningPlayer == player:
+            return 100
+        return -1
+        # r = []
+        # if self.winningPlayer == 1:
+        #     r.append(10)
+        # else:
+        #     r.append(0)
         
-        if self.winningPlayer == 2:
-            r.append(10)
-        else:
-            r.append(0)
-        return r
+        # if self.winningPlayer == 2:
+        #     r.append(10)
+        # else:
+        #     r.append(0)
+        # return r
 
     def canAddStone(self, col): return self.colHeight[col] < 6
     def swapPlayer(self): 
@@ -96,8 +109,7 @@ class MatchFourGame:
 
     def checkDirections(self, row, col, player):
         for (x, y) in self.directions:
-            count = 1
-
+            count = 0
             for i in range(4):
                 newRow = row + i * y
                 newCol = col + i * x
@@ -113,44 +125,50 @@ class MatchFourGame:
         return False
 
 
-
 def trainAi():
-    playerOne = MatchFourAgent(1)
+    playerOne = MatchFourAgent(1, 0.05, 0.4)
+    playerOne.loadLearned("matchFourPlayer1.json")
     playerTwo = MatchFourAgent(2)
+    playerTwo.loadLearned("matchFourPlayer2.json")
     game = MatchFourGame()
     currentPlayer = playerOne
 
     wins = [0,0,0]
-    for i in range(100000):
+    for i in range(1000):
 
         while True:
             actions = game.getPossibleActions()
             
-            action = currentPlayer.chooseAction(game.stringState(), actions)
+            action = currentPlayer.chooseLearnAction(game.stringState(), actions)
             game.addStone(action%7, currentPlayer.playerId)
-            game.swapPlayer()
-
-            reward = game.getReward()
+            
+            isOver = game.checkGameOver(currentPlayer.playerId)
+            reward = game.getReward(currentPlayer.playerId)
             state = game.stringState()
-
-            playerOne.updateStateHistory(state, reward[0])
-            playerTwo.updateStateHistory(state, reward[1])
-
+            currentPlayer.updateStateHistory(state, reward)
+            
+            game.swapPlayer()
             if game.currentPlayer == 1:
                 currentPlayer = playerOne
             else:
                 currentPlayer = playerTwo
 
-            if game.checkGameOver(currentPlayer.playerId):
+            if isOver:
                 break
-        
+            
         playerOne.learn()
         playerTwo.learn()
+
+        if i %10000 == 0:
+            playerOne.saveLearned("matchFourPlayer1.json")
+            playerTwo.saveLearned("matchFourPlayer2.json")        
 
         wins[game.winningPlayer] += 1
         game.reset()
 
     print(wins)
+    playerOne.saveLearned("matchFourPlayer1.json")
+    playerTwo.saveLearned("matchFourPlayer2.json")
 
 
 def tt(super = []):
