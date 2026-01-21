@@ -8,7 +8,7 @@ import pygame
 from random import randint
 from KniffelGameLogic import DiceState
 
-IMAGE_PATH = "Kniffel/Bilder"
+IMAGE_PATH = "Bilder"
 
 class UIHelper:
     def __init__(self, screen, diceSize):
